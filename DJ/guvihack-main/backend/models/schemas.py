@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Union
 
 class MessageObj(BaseModel):
     sender: str
     text: str
-    timestamp: Optional[str] = None
+    timestamp: Optional[Union[int, str]] = None
 
 class MetadataObj(BaseModel):
     channel: str = "SMS"
