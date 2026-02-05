@@ -1,24 +1,30 @@
 # How to Run the Vigilante AI Project
 
-This project consists of a **Next.js frontend** and a **FastAPI backend**.
+This project consists of a **Next.js frontend**, a **FastAPI backend**, and a **LiveKit Voice Agent**.
 
 ## Prerequisites
 - Node.js (v18+)
 - Python (3.9+)
 - A Groq API Key (Get it from [console.groq.com](https://console.groq.com/))
+- A LiveKit Cloud Project (Get it from [livekit.io](https://livekit.io/))
+- A Deepgram API Key (Get it from [deepgram.com](https://deepgram.com/))
 
 ---
 
-## 🚀 1. Setup Backend
+## 🚀 1. Setup Backend (The Brain)
 
 1. Navigate to the backend directory:
    ```bash
    cd backend
    ```
-2. Create or update your `.env` file in this directory:
+2. **Setup Env**: Create or update `.env`:
    ```bash
    # d:/GITHUB/guvihclhack26/DJ/guvihack-main/backend/.env
-   GROQ_API_KEY=your_groq_api_key_here
+   GROQ_API_KEY=your_groq_api_key
+   # Needed for Frontend to Sync with Agent:
+   LIVEKIT_URL=wss://your-project.livekit.cloud
+   LIVEKIT_API_KEY=your_api_key
+   LIVEKIT_API_SECRET=your_api_secret
    ```
 3. Install dependencies:
    ```bash
@@ -32,11 +38,37 @@ This project consists of a **Next.js frontend** and a **FastAPI backend**.
 
 ---
 
-## 🌐 2. Setup Frontend
+## 🎙️ 2. Setup Voice Agent (The Voice)
+
+1. Navigate to the voice module directory:
+   ```bash
+   cd Phase3_Voice
+   ```
+2. **Setup Env**: Create `.env` (Use matching keys as Backend):
+   ```bash
+   LIVEKIT_URL=wss://your-project.livekit.cloud
+   LIVEKIT_API_KEY=your_api_key
+   LIVEKIT_API_SECRET=your_api_secret
+   DEEPGRAM_API_KEY=your_deepgram_key
+   GROQ_API_KEY=your_groq_key
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Run the voice agent:
+   ```bash
+   python agent/agent.py dev
+   ```
+   *The agent will connect to your LiveKit room and wait for users.*
+
+---
+
+## 🌐 3. Setup Frontend (The Interface)
 
 1. Navigate to the frontend directory:
    ```bash
-   cd frontend
+   cd DJI/guvihack-main/frontend
    ```
 2. Install dependencies:
    ```bash
@@ -46,29 +78,12 @@ This project consists of a **Next.js frontend** and a **FastAPI backend**.
    ```bash
    npm run dev
    ```
-   *The website will be available at `http://localhost:3000`*
+4. **Important**: Open `http://localhost:3000/console` to access the microphone securely.
 
 ---
 
-## 🛠️ Tech Stack
-- **Frontend**: Next.js 15, React 19, Tailwind CSS 4, Lucide React.
-- **Backend**: FastAPI, Groq LLM (Llama 3.3 70B), Pydantic.
+## 🔍 Troubleshooting: "Agent Not Speaking"
 
----
-
-## 🔍 Troubleshooting: "Stuck on AI Analyzing"
-
-If the dashboard is stuck at "AI analyzing...", follow these steps:
-
-1. **Check Browser Console**:
-   - Right-click the dashboard -> **Inspect** -> **Console**.
-   - Look for red errors like `ERR_CONNECTION_REFUSED` or `CORS Error`.
-   - If you see a CORS error, ensure `main.py` has the allow_origins=["*"] setting.
-
-2. **Check Backend Terminal**:
-   - Look for lines starting with `DEBUG: [INCOMING]`. 
-   - If you **DO NOT** see these lines after sending a message, the request is not leaving your browser.
-   - If you **DO** see them but it hangs, check your `GROQ_API_KEY` in `.env`.
-
-3. **Verify API URL**:
-   - Open `http://127.0.0.1:8000/` in your browser. You should see `{"status": "Vigilante AI Module 1 Operational"}`.
+1. **Check Log**: Only access via `localhost` (not IP address).
+2. **Check Keys**: Ensure `backend/.env` and `Phase3_Voice/.env` have the **EXACT SAME** `LIVEKIT_URL`, `API_KEY`, and `SECRET`.
+3. **Restart Backend**: If you added keys, restart the backend terminal for them to take effect.

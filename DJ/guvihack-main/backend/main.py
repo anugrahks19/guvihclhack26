@@ -80,6 +80,33 @@ def send_guvi_callback(session_id: str, total_msgs: int, intel: dict, notes: str
 def read_root():
     return {"status": "Vigilante AI Module 1 Operational", "mode": "Hackathon_Evaluation"}
 
+from livekit import api
+
+@app.get("/token")
+def get_token(request: Request):
+    """
+    Generates a LiveKit Access Token for the frontend.
+    Uses credentials from backend/.env (which should match Agent .env).
+    """
+    api_key = os.getenv("LIVEKIT_API_KEY")
+    api_secret = os.getenv("LIVEKIT_API_SECRET")
+
+    if not api_key or not api_secret:
+        raise HTTPException(status_code=500, detail="LIVEKIT_API_KEY or LIVEKIT_API_SECRET not set in backend/.env")
+
+    # Grant access to the test-room
+    grant = api.VideoGrants(room_join=True, room="test-room")
+    
+    # Create token for a unified "Scammer Caller" identity
+    # In a real app, this would be unique per user.
+    token = api.AccessToken(api_key, api_secret) \
+        .with_identity("scammer_identity_frontend") \
+        .with_name("Scammer Caller") \
+        .with_grants(grant) \
+        .with_metadata("grandma") # Default persona
+        
+    return {"token": token.to_jwt(), "url": os.getenv("LIVEKIT_URL")}
+
 @app.post("/webhook", response_model=AgentAPIResponse)
 async def scam_webhook(
     data: ChallengeInput, 
