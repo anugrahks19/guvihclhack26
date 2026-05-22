@@ -4,10 +4,10 @@
 > *Built for the GUVI HCL Hackathon '26*
 
 ---
-
-## 🎯 Overview
-
-**Vigilante AI** is a cutting-edge, multi-modal honeypot system designed to actively trap, engage, and extract intelligence from online scammers. By simulating highly realistic human personas (e.g., a confused grandmother, an impatient shop owner), Vigilante AI keeps scammers engaged in multi-turn conversations, wasting their time while simultaneously harvesting actionable data such as **UPI IDs, bank account numbers, phishing links, and phone numbers**.
+ 
+## 🎯 Overview 
+ 
+**Vigilante AI** is a cutting-edge, m ulti-modal honeypot system designed to actively trap, engage, and extract intelligence from online scammers. By simulating highly realistic human personas (e.g., a confused grandmother, an impatient shop owner), Vigilante AI keeps scammers engaged in multi-turn conversations, wasting their time while simultaneously harvesting actionable data such as **UPI IDs, bank account numbers, phishing links, and phone numbers**.
 
 The platform consists of two main operational pipelines powered by a central **Strategy & Intelligence Engine**:
 1. **Module A (Text Honeypot)**: A high-performance FastAPI webhook router with Regex keyword extraction, combined with a Next.js command dashboard that supports manual "takeover" or autonomous agent control.
