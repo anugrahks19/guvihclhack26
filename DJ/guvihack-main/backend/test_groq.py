@@ -8,8 +8,8 @@ api_key = os.getenv("GROQ_API_KEY")
 print(f"API Key found: {api_key[:5]}...{api_key[-5:] if api_key else 'None'}")
 
 if not api_key:
-    # Fallback to hardcoded key if env load fails (just for test)
-    api_key = "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"
+    print("ERROR: GROQ_API_KEY environment variable is missing. Please set it in your .env file.")
+    api_key = "YOUR_GROQ_API_KEY"
 
 try:
     client = Groq(api_key=api_key)
