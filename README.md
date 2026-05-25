@@ -1,3 +1,13 @@
+---
+title: Vigilante Voice Worker
+emoji: 🎙️
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_dir: Phase3_Voice
+pinned: false
+---
+
 # Vigilante AI 🛡️
 > **Agentic Honey-Pot for Scam Detection & Counter-Intelligence Extraction (Text & Voice)**
 > 
