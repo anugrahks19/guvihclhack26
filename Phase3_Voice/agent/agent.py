@@ -51,9 +51,16 @@ async def entrypoint(ctx: JobContext):
     logger.info(f"Connecting to room {ctx.room.name}")
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
-    # Wait for the first participant to join
-    logger.info("Waiting for participant...")
-    participant = await ctx.wait_for_participant()
+    # Wait for the first participant to join (check existing ones first to prevent spin-up hangs)
+    logger.info("Checking for existing participants...")
+    participant = None
+    if ctx.room.remote_participants:
+        participant = list(ctx.room.remote_participants.values())[0]
+        logger.info(f"Found existing participant: {participant.identity}")
+    else:
+        logger.info("No existing participant found. Waiting for participant to join...")
+        participant = await ctx.wait_for_participant()
+        
     logger.info(f"Starting voice session for participant {participant.identity}")
 
     # Determine persona from participant metadata (passed from frontend)
