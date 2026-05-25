@@ -10,6 +10,34 @@ from personas import PERSONAS, get_persona
 
 load_dotenv()
 
+import threading
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+
+def start_health_check():
+    # Bind to port 7860 (Hugging Face) or fallback to port from env or 8080
+    port = int(os.getenv("PORT", 7860))
+    server_address = ('', port)
+    
+    class HealthCheckHandler(SimpleHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(b'{"status": "Voice Agent Operational"}')
+            
+        def log_message(self, format, *args):
+            pass # Suppress default server logs
+            
+    try:
+        httpd = HTTPServer(server_address, HealthCheckHandler)
+        logging.info(f"Hugging Face Health Check Server active on port {port}")
+        httpd.serve_forever()
+    except Exception as e:
+        logging.error(f"Failed to start Hugging Face health check server: {e}")
+
+# Start the health check server in a background thread
+threading.Thread(target=start_health_check, daemon=True).start()
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("voice-agent")
