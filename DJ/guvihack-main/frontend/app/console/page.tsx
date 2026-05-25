@@ -285,7 +285,8 @@ export default function ConsolePage() {
 
             // Fetch dynamic token from backend
             addLog("Handshaking with Neural Server...");
-            const tokenRes = await fetch('http://localhost:8000/token');
+            const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const tokenRes = await fetch(`${apiBaseUrl}/token`);
             if (!tokenRes.ok) throw new Error("Failed to fetch secure token");
             const { token, url } = await tokenRes.json();
 
@@ -488,7 +489,8 @@ export default function ConsolePage() {
 
         try {
             const startTime = Date.now();
-            const response = await fetch('http://localhost:8000/webhook', {
+            const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiBaseUrl}/webhook`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-API-Key': '12345' },
                 body: JSON.stringify({

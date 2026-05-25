@@ -15,18 +15,18 @@ from fastapi import Header, HTTPException, BackgroundTasks, Request
 import time
 import os
 
-print("\n" + "🚀"*15)
+print("\n" + "="*30)
 print("VIGILANTE BACKEND IS STARTING...")
 print(f"PID: {os.getpid()}")
 print(f"CWD: {os.getcwd()}")
-print("🚀"*15 + "\n")
+print("="*30 + "\n")
 
 @app.on_event("startup")
 async def startup_event():
-    print("\n" + "✅"*15)
+    print("\n" + "="*30)
     print("VIGILANTE AI - FULLY OPERATIONAL")
     print("READY TO INTERCEPT SCAMMERS...")
-    print("✅"*15 + "\n")
+    print("="*30 + "\n")
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
