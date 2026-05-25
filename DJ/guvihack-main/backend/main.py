@@ -77,6 +77,7 @@ def send_guvi_callback(session_id: str, total_msgs: int, intel: dict, notes: str
         print(f"Callback Failed: {e}")
 
 @app.get("/")
+@app.head("/")
 def read_root():
     return {"status": "Vigilante AI Module 1 Operational", "mode": "Hackathon_Evaluation"}
 
