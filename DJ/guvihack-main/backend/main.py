@@ -134,6 +134,13 @@ async def scam_webhook(
     # Define regex backup for later merging
     regex_intel = brain.extract_intelligence_from_text(data.message.text)
     
+    # Merge ExtractedIntelligence (which supports voice normalization) into regex_intel
+    regex_intel["scammerName"] = list(set(regex_intel.get("scammerName", []) + intel_data.scammer_name))
+    regex_intel["upiIds"] = list(set(regex_intel.get("upiIds", []) + intel_data.upi_ids))
+    regex_intel["phoneNumbers"] = list(set(regex_intel.get("phoneNumbers", []) + intel_data.phone_numbers))
+    regex_intel["phishingLinks"] = list(set(regex_intel.get("phishingLinks", []) + intel_data.urls))
+    regex_intel["bankAccounts"] = list(set(regex_intel.get("bankAccounts", []) + intel_data.bank_details))
+    
     # 3. Agent Handoff Logic (Guideline: "Once scam intent is detected... activate AI Agent")
     # For this hackathon honey-pot, we are usually aggressive, but we can now be smart.
     if not scam_analysis["is_scam"]:
@@ -185,6 +192,7 @@ async def scam_webhook(
         return list(set((l1 or []) + (l2 or [])))
 
     final_intel = {
+        "scammerName": merge_lists(llm_intel.get('scammerName'), regex_intel.get('scammerName')),
         "bankAccounts": merge_lists(llm_intel.get('bankAccounts'), regex_intel.get('bankAccounts')),
         "upiIds": merge_lists(llm_intel.get('upiIds'), regex_intel.get('upiIds')),
         "phishingLinks": merge_lists(llm_intel.get('phishingLinks'), regex_intel.get('phishingLinks')),

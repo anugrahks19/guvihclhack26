@@ -24,6 +24,8 @@ interface Message {
     text: string;
     timestamp: string;
     source?: 'voice' | 'text';
+    strategy?: string;
+    analysis?: string;
 }
 
 interface Intelligence {
@@ -209,6 +211,31 @@ const PersonaCard = ({ name, role, active, onClick, avatar }: { name: string, ro
     </button>
 );
 
+const AudioWaveform = ({ active, color = "indigo" }: { active: boolean, color?: "indigo" | "rose" }) => {
+    const bars = Array.from({ length: 15 });
+    return (
+        <div className="flex items-center gap-1 justify-center h-12 w-full px-4 mt-2">
+            {bars.map((_, i) => (
+                <motion.div
+                    key={i}
+                    className={`w-1 rounded-full ${color === 'rose' ? 'bg-rose-500' : 'bg-indigo-500'}`}
+                    animate={active ? {
+                        height: [4, Math.random() * 32 + 8, 4],
+                    } : {
+                        height: 4
+                    }}
+                    transition={active ? {
+                        repeat: Infinity,
+                        duration: Math.random() * 0.5 + 0.3,
+                        ease: "easeInOut",
+                        delay: i * 0.03
+                    } : {}}
+                />
+            ))}
+        </div>
+    );
+};
+
 export default function ConsolePage() {
     const [mounted, setMounted] = useState(false);
     const [persona, setPersona] = useState<'grandma' | 'ramesh'>('grandma');
@@ -347,9 +374,25 @@ export default function ConsolePage() {
 
                     // Extract parameters passively (Scammer only)
                     if (role === 'scammer') {
-                        // UPI ID
-                        const upiRegex = /[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}/g;
-                        const upis = text.match(upiRegex);
+                        // 1. Normalize voice text (convert number words and symbols to standard forms)
+                        let normText = text.toLowerCase();
+                        const numMap: { [key: string]: string } = {
+                            'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+                            'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'
+                        };
+                        Object.keys(numMap).forEach(word => {
+                            normText = normText.replace(new RegExp(`\\b${word}\\b`, 'g'), numMap[word]);
+                        });
+                        
+                        // Convert "at" and "dot" for spoken email/UPI formats
+                        normText = normText.replace(/\s+at\s+/g, '@').replace(/\s+dot\s+/g, '.');
+                        
+                        // Remove spaces for checking consecutive phone digit blocks
+                        const spacesRemoved = normText.replace(/\s+/g, '');
+
+                        // --- UPI ID EXTRACTION ---
+                        const upiRegex = /[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+/g;
+                        const upis = normText.match(upiRegex) || text.match(upiRegex);
                         if (upis) {
                             setIntel(prev => ({
                                 ...prev,
@@ -358,38 +401,62 @@ export default function ConsolePage() {
                             addLog(`Neural Detected: UPI ID [${upis[0]}]`);
                         }
 
-                        // Phone
+                        // --- PHONE EXTRACTION ---
+                        // Matches standard phone numbers or blocks of 10-12 consecutive digits
                         const phoneRegex = /(\+?\d{1,4}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
-                        const phones = text.match(phoneRegex);
+                        const phoneDigitBlockRegex = /\b\d{10,12}\b/g;
+                        
+                        const phones = normText.match(phoneRegex) || text.match(phoneRegex) || spacesRemoved.match(phoneDigitBlockRegex);
                         if (phones) {
-                            setIntel(prev => ({
-                                ...prev,
-                                phoneNumbers: Array.from(new Set([...prev.phoneNumbers, ...phones]))
-                            }));
-                            addLog(`Neural Detected: PHONE [${phones[0]}]`);
+                            // Clean up digits
+                            const cleanPhones = phones.map(p => p.replace(/[^\d+]/g, '')).filter(p => p.length >= 10);
+                            if (cleanPhones.length > 0) {
+                                setIntel(prev => ({
+                                    ...prev,
+                                    phoneNumbers: Array.from(new Set([...prev.phoneNumbers, ...cleanPhones]))
+                                }));
+                                addLog(`Neural Detected: PHONE [${cleanPhones[0]}]`);
+                            }
                         }
 
-                        // Location
+                        // --- LOCATION EXTRACTION ---
                         const locationKeywords = /\b(Mumbai|Delhi|Bangalore|Chennai|Kolkata|London|New York|Dubai|Hyderabad|Pune|Ahmedabad|India)\b/gi;
-                        const locations = text.match(locationKeywords);
+                        const locations = normText.match(locationKeywords) || text.match(locationKeywords);
                         if (locations) {
+                            const formattedLocations = locations.map(l => l.charAt(0).toUpperCase() + l.slice(1).toLowerCase());
                             setIntel(prev => ({
                                 ...prev,
-                                location: Array.from(new Set([...prev.location, ...locations]))
+                                location: Array.from(new Set([...prev.location, ...formattedLocations]))
                             }));
-                            addLog(`Neural Detected: LOCATION [${locations[0]}]`);
+                            addLog(`Neural Detected: LOCATION [${formattedLocations[0]}]`);
                         }
 
-                        // Name
-                        const nameRegex = /my name is ([a-zA-Z\s]{1,30})/i;
-                        const nameMatch = text.match(nameRegex);
-                        if (nameMatch && nameMatch[1]) {
-                            const name = nameMatch[1].trim();
+                        // --- NAME EXTRACTION ---
+                        const namePatterns = [
+                            /my name is ([a-zA-Z\s]{1,30})/i,
+                            /this is ([a-zA-Z\s]{1,30}) calling/i,
+                            /speaking with ([a-zA-Z\s]{1,30})/i,
+                            /i am ([a-zA-Z\s]{1,30})/i
+                        ];
+                        
+                        let detectedName = "";
+                        for (const pat of namePatterns) {
+                            const match = text.match(pat) || normText.match(pat);
+                            if (match && match[1]) {
+                                const possibleName = match[1].trim().split(/\s+/)[0]; // Just take first name to be clean
+                                if (possibleName && !['hello', 'yes', 'no', 'the', 'scam', 'support', 'bank', 'manager'].includes(possibleName.toLowerCase())) {
+                                    detectedName = possibleName.charAt(0).toUpperCase() + possibleName.slice(1).toLowerCase();
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (detectedName) {
                             setIntel(prev => ({
                                 ...prev,
-                                scammerName: Array.from(new Set([...prev.scammerName, name]))
+                                scammerName: Array.from(new Set([...prev.scammerName, detectedName]))
                             }));
-                            addLog(`Neural Detected: NAME [${name}]`);
+                            addLog(`Neural Detected: NAME [${detectedName}]`);
                         }
 
                         // Update Metrics
@@ -505,11 +572,17 @@ export default function ConsolePage() {
             const latency = Date.now() - startTime;
 
             if (data.status === 'success') {
+                const parts = data.debug_thought ? data.debug_thought.split('|') : [];
+                const analysis = parts[0]?.trim();
+                const strategy = parts[1]?.trim();
+
                 const agentMsg: Message = {
                     role: 'agent',
                     text: data.reply,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    source: 'text'
+                    source: 'text',
+                    strategy: strategy || undefined,
+                    analysis: analysis || undefined
                 };
                 setMessages(prev => [...prev, agentMsg]);
 
@@ -653,6 +726,22 @@ export default function ConsolePage() {
                         </div>
                     </div>
 
+                    <AnimatePresence>
+                        {isVoiceConnected && (
+                            <motion.div 
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="bg-slate-50/50 border-b border-slate-100 py-4 px-8 flex flex-col items-center gap-2"
+                            >
+                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                                    {isAgentSpeaking ? "AI Speech Waveform" : isUserSpeaking ? "Scammer Speech Waveform" : "Carrier Link Active"}
+                                </span>
+                                <AudioWaveform active={isAgentSpeaking || isUserSpeaking} color={isAgentSpeaking ? "rose" : "indigo"} />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     <div className="flex-1 overflow-y-auto p-10 space-y-6 scrollbar-thin scrollbar-thumb-indigo-200 scrollbar-track-transparent">
                         <AnimatePresence initial={false}>
                             {messages.map((m, i) => (
@@ -673,6 +762,17 @@ export default function ConsolePage() {
                                             <span className="text-[8px] font-bold opacity-40">{m.timestamp}</span>
                                         </div>
                                         <p className="font-bold leading-relaxed whitespace-pre-wrap break-words">{m.text}</p>
+                                        
+                                        {m.role === 'agent' && m.strategy && (
+                                            <div className="mt-4 pt-3 border-t border-white/10 flex flex-col gap-1 text-white/80">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Brain size={10} className="text-pink-300 animate-pulse" />
+                                                    <span className="text-[8px] font-black uppercase tracking-wider text-pink-200">AI Counter-Measure</span>
+                                                </div>
+                                                <p className="text-[10px] font-black italic">"{m.strategy}"</p>
+                                                {m.analysis && <p className="text-[8px] opacity-60 font-bold">{m.analysis}</p>}
+                                            </div>
+                                        )}
                                     </div>
                                 </motion.div>
                             ))}
@@ -687,6 +787,30 @@ export default function ConsolePage() {
                             </motion.div>
                         )}
                         <div ref={chatEndRef} />
+                    </div>
+
+                    {/* PAYLOAD INJECTOR PANEL */}
+                    <div className="px-8 py-3 bg-slate-50 border-t border-slate-100 flex flex-col gap-2">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                            <Zap size={10} className="text-amber-500 animate-pulse" /> Tactical Payload Injector
+                        </span>
+                        <div className="flex gap-2 overflow-x-auto scrollbar-none py-1">
+                            {[
+                                { label: "💳 Bank verification loop", text: "i am calling from your central bank. please verify your employee id number immediately." },
+                                { label: "⚡ GPAY error injection", text: "my gpay just crashed and said server connection timed out. can you send me your upi id?" },
+                                { label: "📍 Geolocation trap", text: "which branch of the bank in mumbai are you sitting in right now?" },
+                                { label: "👮 Department ID request", text: "provide your active employee registration ID so i can write it in my compliance ledger." }
+                            ].map((payload, i) => (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => setInputValue(payload.text)}
+                                    className="px-4 py-2 bg-white hover:bg-indigo-50 border border-slate-100 hover:border-indigo-200 rounded-full text-[10px] font-black text-slate-600 hover:text-indigo-600 transition-all shrink-0 shadow-sm flex items-center gap-1.5"
+                                >
+                                    {payload.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <form onSubmit={handleSendMessage} className="p-8 bg-white/50 border-t border-slate-100 flex gap-4">
