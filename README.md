@@ -14,6 +14,19 @@ pinned: false
 > *Built for the GUVI HCL Hackathon '26*
 
 ---
+
+### 🌐 Live Cloud Production Demo
+
+Our complete multi-modal platform is fully hosted on public cloud infrastructure! You can interact with the live AI agent dashboard and voice interfaces instantly:
+
+*   💻 **Live Web Console**: [https://vigilante-ai-console.vercel.app](https://vigilante-ai-console.vercel.app) *(Hosted on Vercel)*
+*   ⚙️ **API Gateway**: [https://vigilante-backend12.onrender.com](https://vigilante-backend12.onrender.com) *(Hosted on Render)*
+*   🎙️ **AI Voice Agent Worker**: [https://huggingface.co/spaces/mrintrovert19/vigilante-voice-worker](https://huggingface.co/spaces/mrintrovert19/vigilante-voice-worker) *(Hosted 24/7 on Hugging Face)*
+*   📡 **Audio SFU Broker**: Managed LiveKit Cloud SaaS
+
+> 💡 **Testing Note**: Microphone access is fully supported via Vercel's secure HTTPS connection. Please click **Allow** when prompted for microphone permissions by your browser!
+
+---
  
 ## 🎯 Overview 
  
