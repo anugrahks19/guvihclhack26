@@ -168,8 +168,8 @@ async def entrypoint(ctx: JobContext):
         done_event.set()
 
     # Wait for completion
-    logger.info("Agent is now in the wait_for_disconnect loop. Staying alive.")
-    await ctx.room.wait_for_disconnect()
+    logger.info("Agent is now in the done_event loop. Staying alive.")
+    await done_event.wait()
     logger.info("Agent job finished (room disconnected).")
 
 if __name__ == "__main__":
